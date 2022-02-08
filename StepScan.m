@@ -14,13 +14,14 @@ ypos = str2double(pos(2));
 if isempty(xlastpos)
     xlastpos = xpos;
 end
-uiHandles.inputXPos.set('String', pos(1));
-uiHandles.inputYPos.set('String', pos(2));
+set(uiHandles.inputXPos, 'String', pos(1));
+set(uiHandles.inputYPos, 'String', pos(2));
 if ((xstep - tolerance <= abs(xpos - xlastpos)) && (abs(xpos - xlastpos) <= xstep + tolerance)) || (xpos - xlastpos == 0)
     xlastpos = xpos;
 else
-    fprintf('Table movement cannot keep up! Try increasing the interval!');
-    mTimer.stop;
+    fprintf('Table movement cannot keep up! Try increasing the interval!\n');
+    stop(mTimer);
+    delete(mTimer);
     return
 end
 
@@ -31,16 +32,18 @@ if (j < ycount)
         else
             SetPos('x',xpos - xstep);
         end
-        % 此处插入相机的拍摄以及处理函数
+        % 此处�?�入相机的�?摄以�?�处�?�函数
         i = i + 1;
         return
     end
     SetPos('y',ypos + ystep);
-    % 此处插入相机的拍摄以及处理函数
+    % 此处�?�入相机的�?摄以�?�处�?�函数
     j = j + 1;
     i = 1;
     return
 end
-mTimer.stop;
-fprintf('SCAN COMPLETE')
+stop(mTimer);
+delete(mTimer);
+clear i j xlastpos;
+fprintf('SCAN COMPLETE\n')
 return

@@ -144,16 +144,25 @@ end
 
 % --- Executes on button press in buttonConnect.
 function buttonConnect_Callback(hObject, eventdata, handles)
-port = handles.inputPort.get('String');
-baudrate = str2double(handles.inputBaudrate.get('String'));
 global scom;
-scom = serial(port,'BaudRate',baudrate,'Parity','none','DataBits',8,'StopBits',1);
-scom.Terminator = 'CR';
-scom.InputBufferSize = 1024;
-scom.OutputBufferSize = 1024;
-scom.Timeout = 0.5;
+scom = instrfind('Type', 'serial', 'Port', 'COM3', 'Tag', '');
+if isempty(scom)
+    port = get(handles.inputPort,'String');
+    baudrate = str2double(get(handles.inputBaudrate,'String'));
+    scom = serial(port,'BaudRate',baudrate,'Parity','none','DataBits',8,'StopBits',1);
+    scom.Terminator = 'CR';
+    scom.InputBufferSize = 1024;
+    scom.OutputBufferSize = 1024;
+    scom.Timeout = 0.5;
+else
+    fclose(scom);
+    scom = scom(1);
+end
 fopen(scom);
 fprintf('Port Opened\n');
+
+
+
 % hObject    handle to buttonConnect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -162,9 +171,17 @@ fprintf('Port Opened\n');
 % --- Executes on button press in buttonDisconnect.
 function buttonDisconnect_Callback(hObject, eventdata, handles)
 global scom;
-fclose(scom);
+if isempty(scom)
+    scom = instrfind('Type', 'serial', 'Port', 'COM3', 'Tag', '');
+end
+if isempty(scom)
+    fprintf('Port Not Opened\n')
+else
+    fclose(scom);
+    fprintf('Port Closed\n');
+end
 clear global scom;
-fprintf('Port Closed\n');
+
 % hObject    handle to buttonDisconnect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -219,9 +236,9 @@ end
 % --- Executes on button press in buttonGetPos.
 function buttonGetPos_Callback(hObject, eventdata, handles)
 pos = QueryPos;
-handles.inputXPos.set('String', pos(1));
-handles.inputYPos.set('String', pos(2));
-handles.inputZPos.set('String', pos(3));
+set(handles.inputXPos,'String', pos(1));
+set(handles.inputYPos,'String', pos(2));
+set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonGetPos (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -252,15 +269,15 @@ end
 
 % --- Executes on button press in buttonSetPos.
 function buttonSetPos_Callback(hObject, eventdata, handles)
-x = str2double(handles.inputXPos.get('String'));
-y = str2double(handles.inputYPos.get('String'));
-z = str2double(handles.inputZPos.get('String'));
+x = str2double(get(handles.inputXPos,'String'));
+y = str2double(get(handles.inputYPos,'String'));
+z = str2double(get(handles.inputZPos,'String'));
 SetPos('xyz',[x,y,z]);
-IsBusy;
+IsBusy(hObject);
 pos = QueryPos;
-handles.inputXPos.set('String', pos(1));
-handles.inputYPos.set('String', pos(2));
-handles.inputZPos.set('String', pos(3));
+set(handles.inputXPos,'String', pos(1));
+set(handles.inputYPos,'String', pos(2));
+set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonSetPos (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -278,11 +295,11 @@ function buttonConnect_ButtonDownFcn(hObject, eventdata, handles)
 function buttonXStepMove_Callback(hObject, eventdata, handles)
 pos = QueryPos;
 x = str2double(pos(1));
-step = str2double(handles.inputXStepMove.get('String'));
+step = str2double(get(handles.inputXStepMove,'String'));
 SetPos('x', x + step);
-IsBusy;
+IsBusy(hObject);
 pos = QueryPos;
-handles.inputXPos.set('String', pos(1));
+set(handles.inputXPos,'String', pos(1));
 % hObject    handle to buttonXStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -292,11 +309,11 @@ handles.inputXPos.set('String', pos(1));
 function buttonYStepMove_Callback(hObject, eventdata, handles)
 pos = QueryPos;
 y = str2double(pos(2));
-step = str2double(handles.inputYStepMove.get('String'));
+step = str2double(get(handles.inputYStepMove,'String'));
 SetPos('y', y + step);
-IsBusy;
+IsBusy(hObject);
 pos = QueryPos;
-handles.inputYPos.set('String', pos(2));
+set(handles.inputYPos,'String', pos(2));
 % hObject    handle to buttonYStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -306,11 +323,11 @@ handles.inputYPos.set('String', pos(2));
 function buttonZStepMove_Callback(hObject, eventdata, handles)
 pos = QueryPos;
 z = str2double(pos(3));
-step = str2double(handles.inputZStepMove.get('String'));
+step = str2double(get(handles.inputZStepMove,'String'));
 SetPos('z', z + step);
-IsBusy;
+IsBusy(hObject);
 pos = QueryPos;
-handles.inputZPos.set('String', pos(3));
+set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonZStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -529,7 +546,7 @@ oldtimer = timerfind();
 if ~isempty(oldtimer)
     stop(oldtimer);
     delete(oldtimer);
-    fprintf('Scan Interrupted')
+    fprintf('Scan Interrupted\n')
 end
 % hObject    handle to buttonScanStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -539,18 +556,18 @@ end
 % --- Executes on button press in buttonScanStart.
 function buttonScanStart_Callback(hObject, eventdata, handles)
 if ~isempty(timerfind)
-    fprintf('Already Running!')
+    fprintf('Already Running!\n')
 else
     %global scanInterval scanXCount scanYCount 
-    scanInterval = str2double(handles.inputScanInterval.get('String')) / 1000;
-    scanXCount = str2double(handles.inputXScanCount.get('String'));
-    scanYCount = str2double(handles.inputYScanCount.get('String'));
-    tolerance = str2double(handles.inputScanTolerance,get('String'));
-    scanXStep = str2double(handles.inputXScanStep,get('String'));
-    scanYStep = str2double(handles.inputYScanStep,get('String'));
-    scan_timer = timer('StartDelay',1,'Period',scanInterval,'ExecutionMode','fixedRate','TasksToExecute',scanYCount * scanXCount);
+    scanInterval = str2double(get(handles.inputScanInterval,'String')) / 1000;
+    scanXCount = str2double(get(handles.inputXScanCount,'String'));
+    scanYCount = str2double(get(handles.inputYScanCount,'String'));
+    tolerance = str2double(get(handles.inputScanTolerance,'String'));
+    scanXStep = str2double(get(handles.inputXScanStep,'String'));
+    scanYStep = str2double(get(handles.inputYScanStep,'String'));
+    scan_timer = timer('StartDelay',1,'Period',scanInterval,'ExecutionMode','fixedRate','TasksToExecute',scanYCount * scanXCount + 1);
     scan_timer.TimerFcn = {@StepScan, handles, scanInterval, scanXCount, scanYCount, scanXStep, scanYStep, tolerance};
-    scan_timer.start;
+    start(scan_timer);
 end
 % hObject    handle to buttonScanStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
