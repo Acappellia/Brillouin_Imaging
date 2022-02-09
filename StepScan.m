@@ -1,5 +1,11 @@
 function StepScan(mTimer,~,uiHandles,interval,xcount,ycount,xstep,ystep,tolerance)
-
+global vid;
+global tmp;
+global tmp_1;
+addpath('internal functions');
+linewidth = 15;
+line_x = [tmp_1(1,1) tmp_1(2,1)];
+line_y = [tmp_1(1,2) tmp_1(2,2)];
 persistent i j xlastpos;
 if isempty(i)
     i = 1;
@@ -32,12 +38,42 @@ if (j < ycount)
         else
             SetPos('x',xpos - xstep);
         end
-        % æ­¤å¤„æ?’å…¥ç›¸æœºçš„æ‹?æ‘„ä»¥å?Šå¤„ç?†å‡½æ•°
+        % capture cameraï¿½
+        preview(vid);
+        frame=getsnapshot(vid);
+        axes(uiHandles.axes2);
+        set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
+        imshow(frame);
+        c = adjustSpectralLine(frame, line_x, line_y, linewidth);
+        spectrum = mean(c)'; 
+        axes(uiHandles.axes3);
+        plot(spectrum);title('Dynamic Intensity Curve');
+        drawnow;
+        start(vid);
+        stoppreview(vid);
+        filename=['F:\matlab control\fast_',num2str(j),'_',num2str(i),'.tif'];
+        imwrite(getdata(vid), filename,'tif');
+        stop(vid);
         i = i + 1;
         return
     end
     SetPos('y',ypos + ystep);
-    % æ­¤å¤„æ?’å…¥ç›¸æœºçš„æ‹?æ‘„ä»¥å?Šå¤„ç?†å‡½æ•°
+    % capture cameraï¿½
+    preview(vid);
+    frame=getsnapshot(vid);
+    axes(uiHandles.axes2);
+    set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
+    imshow(frame);
+    c = adjustSpectralLine(frame, line_x, line_y, linewidth);
+    spectrum = mean(c)'; 
+    axes(uiHandles.axes3);
+    plot(spectrum);title('Dynamic Intensity Curve');
+    drawnow;
+    start(vid);
+    stoppreview(vid);
+    filename=['F:\matlab control\fast_',num2str(j),'_',num2str(i),'.tif'];
+    imwrite(getdata(vid), filename,'tif');
+    stop(vid);
     j = j + 1;
     i = 1;
     return
@@ -46,4 +82,5 @@ stop(mTimer);
 delete(mTimer);
 clear i j xlastpos;
 fprintf('SCAN COMPLETE\n')
+stoppreview(vid);
 return

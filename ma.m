@@ -22,7 +22,7 @@ function varargout = ma(varargin)
 
 % Edit the above text to modify the response to help ma
 
-% Last Modified by GUIDE v2.5 17-Jan-2022 10:21:01
+% Last Modified by GUIDE v2.5 08-Feb-2022 22:34:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -192,11 +192,11 @@ linewidth = 15;
 axes(handles.axes2);
 frame=getsnapshot(vid);
 imshow(frame);
-tmp = imline();
-setColor(tmp,'red');
-tmp = wait(tmp);
-line_x = [tmp(1,1) tmp(2,1)];
-line_y = [tmp(1,2) tmp(2,2)];
+tmp_1 = imline();
+setColor(tmp_1,'red');
+tmp_1 = wait(tmp_1);
+line_x = [tmp_1(1,1) tmp_1(2,1)];
+line_y = [tmp_1(1,2) tmp_1(2,2)];
 while (1)
 	axes(handles.axes2);
 	frame=getsnapshot(vid);	
@@ -205,7 +205,7 @@ while (1)
     spectrum = mean(c)'; 
 	axes(handles.axes3);
     plot(spectrum);title('Dynamic Intensity Curve');
-% 	imhist(frame);title('直方�?);
+% 	imhist(frame);title('鐩存柟鍥?);
 	drawnow;
 end
 
@@ -231,3 +231,21 @@ function pushbutton9_Callback(hObject, eventdata, handles)
 axes(handles.axes2);
 frame=getsnapshot(vid);
 incontrast(frame);
+
+
+% --- Executes during object creation, after setting all properties.
+function axes1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to axes1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: place code in OpeningFcn to populate axes1
+
+
+% --- Executes during object creation, after setting all properties.
+function axes2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to axes2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: place code in OpeningFcn to populate axes2

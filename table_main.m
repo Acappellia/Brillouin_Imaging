@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 22-Jan-2022 00:08:21
+% Last Modified by GUIDE v2.5 08-Feb-2022 22:44:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -555,6 +555,9 @@ end
 
 % --- Executes on button press in buttonScanStart.
 function buttonScanStart_Callback(hObject, eventdata, handles)
+global vid;
+global tmp;
+global tmp_1;
 if ~isempty(timerfind)
     fprintf('Already Running!\n')
 else
@@ -572,3 +575,147 @@ end
 % hObject    handle to buttonScanStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit20_Callback(hObject, eventdata, handles)
+% hObject    handle to edit20 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit20 as text
+%        str2double(get(hObject,'String')) returns contents of edit20 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit20_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit20 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton13.
+function pushbutton13_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton13 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global hImage;
+vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+set(vid,'ReturnedColorSpace','grayscale');
+set(vid,'TriggerRepeat',Inf);
+set(vid,'FramesPerTrigger',1);
+vid.FrameGrabInterval=1;
+src=getselectedsource(vid);
+axes(handles.axes1);
+% set(handles.axes1, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
+vidRes=vid.VideoResolution;
+nBands=vid.NumberOfBands;
+hImage=image(zeros(vidRes(2),vidRes(1),nBands));
+preview(vid,hImage);
+
+% --- Executes on button press in pushbutton14.
+function pushbutton14_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton14 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global hImage;
+stoppreview(vid);
+vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_SlowMode');
+set(vid,'ReturnedColorSpace','grayscale');
+set(vid,'TriggerRepeat',Inf);
+set(vid,'FramesPerTrigger',1);
+vid.FrameGrabInterval=1;
+src=getselectedsource(vid);
+num = str2double(get(handles.edit20,'String'));
+src.ExposureTime = num;
+axes(handles.axes1);
+% set(handles.axes1, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
+vidRes=vid.VideoResolution;
+nBands=vid.NumberOfBands;
+hImage=image(zeros(vidRes(2),vidRes(1),nBands));
+preview(vid,hImage);
+
+
+% --- Executes on button press in pushbutton15.
+function pushbutton15_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global hImage;
+global tmp;
+axes(handles.axes2);
+frame=getsnapshot(vid);
+imagesc(frame);title('Select the ROI');
+tmp = imrect();
+setColor(tmp,'red');
+tmp = round(wait(tmp));
+stoppreview(vid);
+vid.ROIPosition = [tmp(1) tmp(2) tmp(3) tmp(4)];
+preview(vid);
+frame=getsnapshot(vid);
+axes(handles.axes2);
+set(handles.axes2, 'Units', 'pixels', 'Position', [16, 73, 300*tmp(3)/tmp(4), 300]);
+imagesc(frame);
+
+% --- Executes on button press in pushbutton16.
+function pushbutton16_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton16 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global tmp;
+axes(handles.axes2);
+set(handles.axes2, 'Units', 'pixels', 'Position', [16, 73, 300*tmp(3)/tmp(4),300]);
+while (1)
+	frame=getsnapshot(vid);	
+    imshow(frame);
+	drawnow;
+end
+
+
+% --- Executes on button press in pushbutton17.
+function pushbutton17_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton17 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global hImage;
+global tmp_1;
+i=0;
+addpath('internal functions');
+linewidth = 15;
+axes(handles.axes2);
+frame=getsnapshot(vid);
+imshow(frame);
+tmp_1 = imline();
+setColor(tmp_1,'red');
+tmp_1 = wait(tmp_1);
+line_x = [tmp_1(1,1) tmp_1(2,1)];
+line_y = [tmp_1(1,2) tmp_1(2,2)];
+while (1)
+%     preview(vid);
+    i=i+1;
+	axes(handles.axes2);
+	frame=getsnapshot(vid);	
+    imshow(frame);
+    c = adjustSpectralLine(frame, line_x, line_y, linewidth);
+    spectrum = mean(c)'; 
+	axes(handles.axes3);
+    plot(spectrum);title('Dynamic Intensity Curve');
+	drawnow;
+%     start(vid);
+%     stoppreview(vid);
+%     filename=['F:\matlab control\',num2str(i),'.tif'];
+%     imwrite(getdata(vid), filename,'tif');
+%     stop(vid);
+
+end
