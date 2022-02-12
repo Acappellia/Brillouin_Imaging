@@ -14,6 +14,12 @@ if isempty(j)
     j = 0;
 end
 
+index = get(uiHandles.inputSaveIndex, 'String');
+
+
+filename=['F:\20220212_3\',index,'_',num2str(i+j*xcount),'.tif'];
+
+
 pos = QueryPos;
 xpos = str2double(pos(1));
 ypos = str2double(pos(2));
@@ -38,12 +44,14 @@ if (j < ycount)
         else
             SetPos('x',xpos - xstep);
         end
-        % capture camera�
+        % capture camera?
         preview(vid);
+        num3 = str2double(get(uiHandles.edit21,'String'));
         frame=getsnapshot(vid);
+        frame_ad = imadjust(frame,[0 num3],[0 1]);
         axes(uiHandles.axes2);
         set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
-        imshow(frame);
+        imshow(frame_ad);
         c = adjustSpectralLine(frame, line_x, line_y, linewidth);
         spectrum = mean(c)'; 
         axes(uiHandles.axes3);
@@ -51,19 +59,22 @@ if (j < ycount)
         drawnow;
         start(vid);
         stoppreview(vid);
-        filename=['F:\matlab control\fast_',num2str(j),'_',num2str(i),'.tif'];
+%         filename=['F:\20200211_1\2_' int2str(i) '.tif'];
+        
         imwrite(getdata(vid), filename,'tif');
         stop(vid);
         i = i + 1;
         return
     end
     SetPos('y',ypos + ystep);
-    % capture camera�
+    % capture camera
     preview(vid);
+    num3 = str2double(get(uiHandles.edit21,'String'));
     frame=getsnapshot(vid);
+    frame_ad = imadjust(frame,[0 num3],[0 1]);
     axes(uiHandles.axes2);
     set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
-    imshow(frame);
+    imshow(frame_ad);
     c = adjustSpectralLine(frame, line_x, line_y, linewidth);
     spectrum = mean(c)'; 
     axes(uiHandles.axes3);
@@ -71,13 +82,14 @@ if (j < ycount)
     drawnow;
     start(vid);
     stoppreview(vid);
-    filename=['F:\matlab control\fast_',num2str(j),'_',num2str(i),'.tif'];
+%     filename=['F:\20200211_1\3_' int2str(i) '.tif'];
     imwrite(getdata(vid), filename,'tif');
     stop(vid);
     j = j + 1;
     i = 1;
     return
 end
+set(uiHandles.inputSaveIndex,'String',num2str(str2double(index) + 1));
 stop(mTimer);
 delete(mTimer);
 clear i j xlastpos;

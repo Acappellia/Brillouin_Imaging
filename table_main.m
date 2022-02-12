@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 08-Feb-2022 22:44:11
+% Last Modified by GUIDE v2.5 12-Feb-2022 18:56:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -545,7 +545,9 @@ function buttonScanStop_Callback(hObject, eventdata, handles)
 oldtimer = timerfind();
 if ~isempty(oldtimer)
     stop(oldtimer);
-    delete(oldtimer);
+    delete(oldtimer); 
+    index = get(uiHandles.inputSaveIndex, 'String');
+    set(uiHandles.inputSaveIndex,'String',num2str(index + 1));
     fprintf('Scan Interrupted\n')
 end
 % hObject    handle to buttonScanStop (see GCBO)
@@ -673,11 +675,13 @@ function pushbutton16_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global vid;
 global tmp;
+num1 = str2double(get(handles.edit21,'String'));
 axes(handles.axes2);
 set(handles.axes2, 'Units', 'pixels', 'Position', [16, 73, 300*tmp(3)/tmp(4),300]);
 while (1)
 	frame=getsnapshot(vid);	
-    imshow(frame);
+    frame_ad = imadjust(frame,[0 num1],[0 1]);
+    imshow(frame_ad);
 	drawnow;
 end
 
@@ -690,12 +694,14 @@ function pushbutton17_Callback(hObject, eventdata, handles)
 global vid;
 global hImage;
 global tmp_1;
+num1 = str2double(get(handles.edit21,'String'));
 i=0;
 addpath('internal functions');
 linewidth = 15;
 axes(handles.axes2);
 frame=getsnapshot(vid);
-imshow(frame);
+frame_ad = imadjust(frame,[0 num1],[0 1]);
+imshow(frame_ad);
 tmp_1 = imline();
 setColor(tmp_1,'red');
 tmp_1 = wait(tmp_1);
@@ -706,7 +712,8 @@ while (1)
     i=i+1;
 	axes(handles.axes2);
 	frame=getsnapshot(vid);	
-    imshow(frame);
+    frame_ad = imadjust(frame,[0 num1],[0 1]);
+    imshow(frame_ad);
     c = adjustSpectralLine(frame, line_x, line_y, linewidth);
     spectrum = mean(c)'; 
 	axes(handles.axes3);
@@ -718,4 +725,95 @@ while (1)
 %     imwrite(getdata(vid), filename,'tif');
 %     stop(vid);
 
+end
+
+
+
+function edit21_Callback(hObject, eventdata, handles)
+% hObject    handle to edit21 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit21 as text
+%        str2double(get(hObject,'String')) returns contents of edit21 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit21_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit21 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton18.
+function pushbutton18_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton18 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+global tmp;
+num2 = str2double(get(handles.edit22,'String'));
+preview(vid);
+frame=getsnapshot(vid);
+axes(handles.axes2);
+set(handles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
+imshow(frame);
+drawnow;
+start(vid);
+stoppreview(vid);
+filename=['F:\20200211_1\cab\',num2str(num2),'.tif'];
+imwrite(getdata(vid), filename,'tif');
+stop(vid);
+preview(vid);
+
+
+
+function edit22_Callback(hObject, eventdata, handles)
+% hObject    handle to edit22 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit22 as text
+%        str2double(get(hObject,'String')) returns contents of edit22 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit22_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit22 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function inputSaveIndex_Callback(hObject, eventdata, handles)
+% hObject    handle to inputSaveIndex (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of inputSaveIndex as text
+%        str2double(get(hObject,'String')) returns contents of inputSaveIndex as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function inputSaveIndex_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputSaveIndex (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
