@@ -787,7 +787,9 @@ start(line_timer);
 function LineFrame(~,~, line_x, line_y, linewidth, ax)
 
 global vid;
-frame=getsnapshot(vid);	
+frame=getsnapshot(vid);
+filename=['C:\Users\Arthur Li\Documents\MATLAB\Brillouin Scan\test.tif'];
+imwrite(frame, filename,'tif');
 c = adjustSpectralLine(frame, line_x, line_y, linewidth);
 spectrum = mean(c); 
 plot(ax,spectrum);
