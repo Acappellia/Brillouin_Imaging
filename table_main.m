@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 12-Feb-2022 18:56:11
+% Last Modified by GUIDE v2.5 15-Feb-2022 01:15:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -53,6 +53,7 @@ function table_main_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to table_main (see VARARGIN)
 
 % Choose default command line output for table_main
+clear global scom scan_timer vid line_timer axPos;
 handles.output = hObject;
 
 % Update handles structure
@@ -542,10 +543,10 @@ end
 
 % --- Executes on button press in buttonScanStop.
 function buttonScanStop_Callback(hObject, eventdata, handles)
-oldtimer = timerfind();
-if ~isempty(oldtimer)
-    stop(oldtimer);
-    delete(oldtimer); 
+global scan_timer
+if ~isempty(scan_timer)
+    stop(scan_timer);
+    delete(scan_timer); 
     index = get(uiHandles.inputSaveIndex, 'String');
     set(uiHandles.inputSaveIndex,'String',num2str(index + 1));
     fprintf('Scan Interrupted\n')
@@ -557,9 +558,7 @@ end
 
 % --- Executes on button press in buttonScanStart.
 function buttonScanStart_Callback(hObject, eventdata, handles)
-global vid;
-global tmp;
-global tmp_1;
+global scan_timer;
 if ~isempty(timerfind)
     fprintf('Already Running!\n')
 else
@@ -580,18 +579,18 @@ end
 
 
 
-function edit20_Callback(hObject, eventdata, handles)
-% hObject    handle to edit20 (see GCBO)
+function inputExposure_Callback(hObject, eventdata, handles)
+% hObject    handle to inputExposure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit20 as text
-%        str2double(get(hObject,'String')) returns contents of edit20 as a double
+% Hints: get(hObject,'String') returns contents of inputExposure as text
+%        str2double(get(hObject,'String')) returns contents of inputExposure as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit20_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit20 (see GCBO)
+function inputExposure_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputExposure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -602,122 +601,172 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in pushbutton13.
-function pushbutton13_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton13 (see GCBO)
+% --- Executes on button press in buttonPreview.
+function buttonPreview_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonPreview (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid;
-global hImage;
-vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+global vid axPos;
+global line_timer;
+if ~isempty(line_timer)
+    stop(line_timer);
+    delete(line_timer);
+    clear global line_timer;
+end
+if ~isempty(vid)
+    stoppreview(vid);
+end
+if isempty(axPos)
+    axPos = get(handles.axesPreview, 'Position');
+else
+    set(handles.axesPreview, 'Position', axPos);
+end
+
+% vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+vid = videoinput('winvideo', 1, 'RGB24_960x540');
 set(vid,'ReturnedColorSpace','grayscale');
 set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
 vid.FrameGrabInterval=1;
+
+%{
+
+% Change following lines into comments only in testing
+% TBD
+
 src=getselectedsource(vid);
-axes(handles.axes1);
-% set(handles.axes1, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
+src.ExposureTime = str2double(get(handles.inputExposure,'String'));
+intensityHigherBound = str2double(get(handles.inputIntensityHigherBound,'String'));
+
+%}
+
+axes(handles.axesPreview);
+% set(handles.axesPreview, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
 vidRes=vid.VideoResolution;
 nBands=vid.NumberOfBands;
 hImage=image(zeros(vidRes(2),vidRes(1),nBands));
 preview(vid,hImage);
 
-% --- Executes on button press in pushbutton14.
-function pushbutton14_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton14 (see GCBO)
+%{
+
+% --- Executes on button press in buttonUpdateExT.
+function buttonUpdateExT_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonUpdateExT (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global vid;
 global hImage;
 stoppreview(vid);
-vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_SlowMode');
+% vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_SlowMode');
+vid = videoinput('winvideo', 1, 'RGB24_960x540');
 set(vid,'ReturnedColorSpace','grayscale');
 set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
 vid.FrameGrabInterval=1;
-src=getselectedsource(vid);
-num = str2double(get(handles.edit20,'String'));
-src.ExposureTime = num;
-axes(handles.axes1);
-% set(handles.axes1, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
+axes(handles.axesPreview);
+% set(handles.axesPreview, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
 vidRes=vid.VideoResolution;
 nBands=vid.NumberOfBands;
 hImage=image(zeros(vidRes(2),vidRes(1),nBands));
 preview(vid,hImage);
 
+%}
 
-% --- Executes on button press in pushbutton15.
-function pushbutton15_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton15 (see GCBO)
+% --- Executes on button press in buttonSelectROI.
+function buttonSelectROI_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonSelectROI (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid;
-global hImage;
-global tmp;
-axes(handles.axes2);
-frame=getsnapshot(vid);
-imagesc(frame);title('Select the ROI');
-tmp = imrect();
-setColor(tmp,'red');
-tmp = round(wait(tmp));
+global vid axPos;
+axes(handles.axesPreview);
+% frame=getsnapshot(vid);
+% imagesc(frame);
+% title('Select the ROI');
+rectangleROI = imrect();
+setColor(rectangleROI,'red');
+rectangleROI = round(wait(rectangleROI));
 stoppreview(vid);
-vid.ROIPosition = [tmp(1) tmp(2) tmp(3) tmp(4)];
-preview(vid);
-frame=getsnapshot(vid);
-axes(handles.axes2);
-set(handles.axes2, 'Units', 'pixels', 'Position', [16, 73, 300*tmp(3)/tmp(4), 300]);
-imagesc(frame);
+vidRes = vid.VideoResolution;
+nBands=vid.NumberOfBands;
+hImage=image(zeros(vidRes(2),vidRes(1),nBands));
+vid.ROIPosition = [rectangleROI(1) rectangleROI(2) rectangleROI(3) rectangleROI(4)];
+newPos = [axPos(1), axPos(2) + axPos(4) - round(axPos(4)*vidRes(2)/rectangleROI(4)), round(axPos(3)*vidRes(1)/rectangleROI(3)), round(axPos(4)*vidRes(2)/rectangleROI(4))];
+preview(vid,hImage);
+% frame=getsnapshot(vid);
+% axes(handles.axesROI);
+set(handles.axesPreview, 'Position', newPos);
+% set(handles.axesROI, 'Units', 'pixels', 'Position', [16, 73, 300*rectangleROI(3)/rectangleROI(4), 300]);
+% imagesc(frame);
 
-% --- Executes on button press in pushbutton16.
-function pushbutton16_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton16 (see GCBO)
+%{
+
+% --- Executes on button press in buttonROIDyCam.
+function buttonROIDyCam_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonROIDyCam (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global vid;
-global tmp;
-num1 = str2double(get(handles.edit21,'String'));
-axes(handles.axes2);
-set(handles.axes2, 'Units', 'pixels', 'Position', [16, 73, 300*tmp(3)/tmp(4),300]);
+num1 = str2double(get(handles.inputIntensityHigherBound,'String'));
+% set(handles.axesROI, 'Units', 'pixels', 'Position', [16, 73, 300*rectangleROI(3)/rectangleROI(4),300]);
 while (1)
+    axes(handles.axesROI);
 	frame=getsnapshot(vid);	
     frame_ad = imadjust(frame,[0 num1],[0 1]);
     imshow(frame_ad);
 	drawnow;
 end
 
+%}
 
-% --- Executes on button press in pushbutton17.
-function pushbutton17_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton17 (see GCBO)
+% --- Executes on button press in buttonDrawLine.
+function buttonDrawLine_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonDrawLine (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid;
-global hImage;
-global tmp_1;
-num1 = str2double(get(handles.edit21,'String'));
-i=0;
+global vid line_timer;
+if ~isempty(line_timer)
+    stop(line_timer);
+    delete(line_timer);
+    clear global line_timer;
+end
+% num1 = str2double(get(handles.inputIntensityHigherBound,'String'));
+% i=0;
 addpath('internal functions');
 linewidth = 15;
-axes(handles.axes2);
-frame=getsnapshot(vid);
-frame_ad = imadjust(frame,[0 num1],[0 1]);
-imshow(frame_ad);
-tmp_1 = imline();
-setColor(tmp_1,'red');
-tmp_1 = wait(tmp_1);
-line_x = [tmp_1(1,1) tmp_1(2,1)];
-line_y = [tmp_1(1,2) tmp_1(2,2)];
+%frame=getsnapshot(vid);
+%frame_ad = imadjust(frame,[0 num1],[0 1]);
+%imshow(frame_ad);
+lineSignal = imline();
+setColor(lineSignal,'red');
+lineSignal = wait(lineSignal);
+line_x = [lineSignal(1,1) lineSignal(2,1)];
+line_y = [lineSignal(1,2) lineSignal(2,2)];
+
+%{
+
+global vid;
+axes(handles.axesPreview);
+vidRes = vid.VideoResolution;
+nBands=vid.NumberOfBands;
+hImage=image(zeros(vidRes(2),vidRes(1),nBands));
+preview(vid,hImage);
+
+%}
+
+%{
+
+axes(handles.axesLine);
 while (1)
 %     preview(vid);
-    i=i+1;
-	axes(handles.axes2);
+%     i=i+1;
+	% axes(handles.axesROI);
 	frame=getsnapshot(vid);	
-    frame_ad = imadjust(frame,[0 num1],[0 1]);
-    imshow(frame_ad);
+    % frame_ad = imadjust(frame,[0 num1],[0 1]);
+    % imshow(frame_ad);
     c = adjustSpectralLine(frame, line_x, line_y, linewidth);
-    spectrum = mean(c)'; 
-	axes(handles.axes3);
-    plot(spectrum);title('Dynamic Intensity Curve');
+    spectrum = mean(c); 
+    plot(spectrum);
+    % title('Dynamic Intensity Curve');
 	drawnow;
 %     start(vid);
 %     stoppreview(vid);
@@ -727,20 +776,36 @@ while (1)
 
 end
 
+%}
+
+lineinterval = str2double(get(handles.inputExposure,'String'));
+ax = handles.axesLine;
+line_timer = timer('Period',lineinterval,'ExecutionMode','fixedRate');
+line_timer.TimerFcn = {@LineFrame, line_x, line_y, linewidth, ax};
+start(line_timer);
+
+function LineFrame(~,~, line_x, line_y, linewidth, ax)
+
+global vid;
+frame=getsnapshot(vid);	
+c = adjustSpectralLine(frame, line_x, line_y, linewidth);
+spectrum = mean(c); 
+plot(ax,spectrum);
+drawnow;
 
 
-function edit21_Callback(hObject, eventdata, handles)
-% hObject    handle to edit21 (see GCBO)
+function inputIntensityHigherBound_Callback(hObject, eventdata, handles)
+% hObject    handle to inputIntensityHigherBound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit21 as text
-%        str2double(get(hObject,'String')) returns contents of edit21 as a double
+% Hints: get(hObject,'String') returns contents of inputIntensityHigherBound as text
+%        str2double(get(hObject,'String')) returns contents of inputIntensityHigherBound as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit21_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit21 (see GCBO)
+function inputIntensityHigherBound_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputIntensityHigherBound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -751,18 +816,17 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in pushbutton18.
-function pushbutton18_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton18 (see GCBO)
+% --- Executes on button press in buttonCal.
+function buttonCal_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global vid;
-global tmp;
-num2 = str2double(get(handles.edit22,'String'));
+num2 = str2double(get(handles.inputCal,'String'));
 preview(vid);
 frame=getsnapshot(vid);
-axes(handles.axes2);
-set(handles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
+axes(handles.axesROI);
+% set(handles.axesROI, 'Units', 'pixels', 'Position', [12, 138, 144*rectangleROI(3)/rectangleROI(4),144]);
 imshow(frame);
 drawnow;
 start(vid);
@@ -774,18 +838,18 @@ preview(vid);
 
 
 
-function edit22_Callback(hObject, eventdata, handles)
-% hObject    handle to edit22 (see GCBO)
+function inputCal_Callback(hObject, eventdata, handles)
+% hObject    handle to inputCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit22 as text
-%        str2double(get(hObject,'String')) returns contents of edit22 as a double
+% Hints: get(hObject,'String') returns contents of inputCal as text
+%        str2double(get(hObject,'String')) returns contents of inputCal as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit22_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit22 (see GCBO)
+function inputCal_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

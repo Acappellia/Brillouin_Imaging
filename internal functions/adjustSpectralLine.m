@@ -19,7 +19,9 @@ res = imrotate(res, angle, 'bilinear');
 
 %then remove everything that is outside the line
 linelength = sqrt( (line_y(2)-line_y(1))^2 +  (line_x(2)-line_x(1))^2 );
+warning('off','all');
 res = res(  round((end-linewidth)/2) : round((end+linewidth)/2) ,  round((end-linelength)/2) : round((end+linelength))/2 );
+warning('on','all');
 
 %make sure that sizes are a even number
 % [rows, columns] = size(res);
