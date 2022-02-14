@@ -629,7 +629,7 @@ set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
 vid.FrameGrabInterval=1;
 
-%{
+%
 
 % Change following lines into comments only in testing
 % TBD
@@ -638,7 +638,7 @@ src=getselectedsource(vid);
 src.ExposureTime = str2double(get(handles.inputExposure,'String'));
 intensityHigherBound = str2double(get(handles.inputIntensityHigherBound,'String'));
 
-%}
+%
 
 axes(handles.axesPreview);
 % set(handles.axesPreview, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
@@ -788,8 +788,8 @@ function LineFrame(~,~, line_x, line_y, linewidth, ax)
 
 global vid;
 frame=getsnapshot(vid);
-filename=['C:\Users\Arthur Li\Documents\MATLAB\Brillouin Scan\test.tif'];
-imwrite(frame, filename,'tif');
+% filename=['C:\Users\Arthur Li\Documents\MATLAB\Brillouin Scan\test.tif'];
+% imwrite(frame, filename,'tif');
 c = adjustSpectralLine(frame, line_x, line_y, linewidth);
 spectrum = mean(c); 
 plot(ax,spectrum);

@@ -1,4 +1,4 @@
-function StepScan(mTimer,~,uiHandles,interval,xcount,ycount,xstep,ystep,tolerance)
+function StepScan(mTimer,~,uiHandles,~,xcount,ycount,xstep,ystep,tolerance)
 global vid;
 % addpath('internal functions');
 % linewidth = 15;
