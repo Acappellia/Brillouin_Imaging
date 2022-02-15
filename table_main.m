@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 15-Feb-2022 01:15:19
+% Last Modified by GUIDE v2.5 15-Feb-2022 21:10:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -547,6 +547,7 @@ global scan_timer
 if ~isempty(scan_timer)
     stop(scan_timer);
     delete(scan_timer); 
+    clear global scan_timer;
     index = get(uiHandles.inputSaveIndex, 'String');
     set(uiHandles.inputSaveIndex,'String',num2str(index + 1));
     fprintf('Scan Interrupted\n')
@@ -559,11 +560,11 @@ end
 % --- Executes on button press in buttonScanStart.
 function buttonScanStart_Callback(hObject, eventdata, handles)
 global scan_timer;
-if ~isempty(timerfind)
+if ~isempty(scan_timer)
     fprintf('Already Running!\n')
 else
     %global scanInterval scanXCount scanYCount 
-    scanInterval = str2double(get(handles.inputScanInterval,'String')) / 1000;
+    scanInterval = str2double(get(handles.inputScanInterval,'String'));
     scanXCount = str2double(get(handles.inputXScanCount,'String'));
     scanYCount = str2double(get(handles.inputYScanCount,'String'));
     tolerance = str2double(get(handles.inputScanTolerance,'String'));
@@ -622,8 +623,8 @@ else
     set(handles.axesPreview, 'Position', axPos);
 end
 
-% vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
-vid = videoinput('winvideo', 1, 'RGB24_960x540');
+vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+% vid = videoinput('winvideo', 1, 'RGB24_960x540');
 set(vid,'ReturnedColorSpace','grayscale');
 set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
@@ -824,19 +825,14 @@ function buttonCal_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global vid;
-num2 = str2double(get(handles.inputCal,'String'));
-preview(vid);
+calIndex = get(handles.inputCal,'String');
 frame=getsnapshot(vid);
-axes(handles.axesROI);
-% set(handles.axesROI, 'Units', 'pixels', 'Position', [12, 138, 144*rectangleROI(3)/rectangleROI(4),144]);
-imshow(frame);
-drawnow;
-start(vid);
-stoppreview(vid);
-filename=['F:\20200211_1\cab\',num2str(num2),'.tif'];
-imwrite(getdata(vid), filename,'tif');
-stop(vid);
-preview(vid);
+% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+% frame = imadjust(frame,[0 bound],[0 1]);
+path = get(handles.inputSaveLocation,'String');
+filename=[path,'\', calIndex,'.tif'];
+imwrite(frame, filename,'tif');
+set(handles.inputCal, 'String', num2str(str2double(calIndex)+1));
 
 
 
@@ -883,3 +879,84 @@ function inputSaveIndex_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in buttonChooseLocation.
+function buttonChooseLocation_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonChooseLocation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+pathname = uigetdir('./','Choose Saving Directory');
+set(handles.inputSaveLocation,'String',pathname);
+
+
+
+function inputSaveLocation_Callback(hObject, eventdata, handles)
+% hObject    handle to inputSaveLocation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of inputSaveLocation as text
+%        str2double(get(hObject,'String')) returns contents of inputSaveLocation as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function inputSaveLocation_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputSaveLocation (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in buttonDeleteTimer.
+function buttonDeleteTimer_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonDeleteTimer (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+timers = timerfind;
+if ~isempty(timers)
+    stop(timers);
+    delete(timers);
+end
+clear global line_timer scan_timer
+fprintf('All timer deleted\n');
+
+
+
+% --- Executes on button press in buttonExit.
+function buttonExit_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonExit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global vid;
+stoppreview(vid);
+buttonDisconnect_Callback(hObject, eventdata, handles);
+buttonDeleteTimer_Callback(hObject, eventdata, handles);
+clear global vid axPos;
+close();
+
+
+% --- Executes on button press in buttonScanPause.
+function buttonScanPause_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonScanPause (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in buttonScanCal.
+function buttonScanCal_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonScanCal (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in buttonScanResume.
+function buttonScanResume_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonScanResume (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

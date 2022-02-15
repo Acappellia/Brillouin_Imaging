@@ -9,13 +9,13 @@ if isempty(i)
     i = 1;
 end
 if isempty(j)
-    j = 0;
+    j = 1;
 end
 
-index = get(uiHandles.inputSaveIndex, 'String');
+index = get(uiHandles.inputCal, 'String');
 
-
-filename=['F:\20220212_3\',index,'_',num2str(i+j*xcount),'.tif'];
+path = get(uiHandles.inputSaveLocation,'String');
+filename=[path,'\',index,'_',num2str(j),'_',num2str(i),'.tif'];
 
 
 pos = QueryPos;
@@ -31,73 +31,46 @@ if ((xstep - tolerance <= abs(xpos - xlastpos)) && (abs(xpos - xlastpos) <= xste
 else
     fprintf('Table movement cannot keep up! Try increasing the interval!\n');
     stop(mTimer);
-    delete(mTimer);
+    delete(mTimer);  
+    clear global scan_timer;
     return
 end
 
-if (j < ycount)
+if (j > ycount)
+    set(uiHandles.inputCal,'String',num2str(str2double(index) + 1));
+    set(uiHandles.textIndexI,'String','0');
+    set(uiHandles.textIndexJ,'String','0');
+    stop(mTimer);
+    delete(mTimer);
+    clear global scan_timer;
+    clear i j xlastpos;
+    fprintf('SCAN COMPLETE\n')
+    return
+end
+
+set(uiHandles.textIndexI,'String',num2str(i));
+set(uiHandles.textIndexJ,'String',num2str(j));
+
+frame=getsnapshot(vid);
+% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+% frame = imadjust(frame,[0 bound],[0 1]);
+imwrite(frame,filename,'tif');
+
+if (mod(j,2) == 1)
     if (i < xcount)
-        if (mod(j,2) == 0)
-            SetPos('x',xpos + xstep);
-        else
-            SetPos('x',xpos - xstep);
-        end
-        
-        % preview(vid);
-
-        frame=getsnapshot(vid);
-        % num3 = str2double(get(uiHandles.edit21,'String'));
-        % frame_ad = imadjust(frame,[0 num3],[0 1]);
-
-        % axes(uiHandles.axes2);
-        % set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
-        % imshow(frame_ad);
-        % c = adjustSpectralLine(frame, line_x, line_y, linewidth);
-        % spectrum = mean(c)'; 
-        % axes(uiHandles.axes3);
-        % plot(spectrum);title('Dynamic Intensity Curve');
-        % drawnow;
-        % start(vid);
-        % stoppreview(vid);
-        
-        %imwrite(getdata(vid), filename,'tif');
-        % stop(vid);
-        imwrite(frame,filename,'tif');
-
+        SetPos('x',xpos + xstep);
         i = i + 1;
         return
     end
     SetPos('y',ypos + ystep);
-    
-    % preview(vid);
-
-    frame=getsnapshot(vid);
-    % num3 = str2double(get(uiHandles.edit21,'String'));
-    % frame_ad = imadjust(frame,[0 num3],[0 1]);
-
-    % axes(uiHandles.axes2);
-    % set(uiHandles.axes2, 'Units', 'pixels', 'Position', [12, 138, 144*tmp(3)/tmp(4),144]);
-    % imshow(frame_ad);
-    % c = adjustSpectralLine(frame, line_x, line_y, linewidth);
-    % spectrum = mean(c)'; 
-    % axes(uiHandles.axes3);
-    % plot(spectrum);title('Dynamic Intensity Curve');
-    % drawnow;
-    % start(vid);
-    % stoppreview(vid);
-    
-    %imwrite(getdata(vid), filename,'tif');
-    % stop(vid);
-    imwrite(frame,filename,'tif');
-
     j = j + 1;
-    i = 1;
-    return
+else
+    if (i > 1)
+        SetPos('x',xpos - xstep);
+        i = i - 1;
+        return
+    end
+    SetPos('y',ypos + ystep);
+    j = j + 1;
 end
-set(uiHandles.inputSaveIndex,'String',num2str(str2double(index) + 1));
-stop(mTimer);
-delete(mTimer);
-clear i j xlastpos;
-fprintf('SCAN COMPLETE\n')
-% stoppreview(vid);
 return
