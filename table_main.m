@@ -563,7 +563,6 @@ global scan_timer;
 if ~isempty(scan_timer)
     fprintf('Already Running!\n')
 else
-    %global scanInterval scanXCount scanYCount 
     scanInterval = str2double(get(handles.inputScanInterval,'String'));
     scanXCount = str2double(get(handles.inputXScanCount,'String'));
     scanYCount = str2double(get(handles.inputYScanCount,'String'));
@@ -623,14 +622,14 @@ else
     set(handles.axesPreview, 'Position', axPos);
 end
 
-vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
-% vid = videoinput('winvideo', 1, 'RGB24_960x540');
+% vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+vid = videoinput('winvideo', 1, 'RGB24_960x540');
 set(vid,'ReturnedColorSpace','grayscale');
 set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
 vid.FrameGrabInterval=1;
 
-%
+%{
 
 % Change following lines into comments only in testing
 % TBD
@@ -639,14 +638,14 @@ src=getselectedsource(vid);
 src.ExposureTime = str2double(get(handles.inputExposure,'String'));
 intensityHigherBound = str2double(get(handles.inputIntensityHigherBound,'String'));
 
-%
-
-axes(handles.axesPreview);
-% set(handles.axesPreview, 'Units', 'pixels', 'Position', [7, 68, 300, 300]);
+%}
+ax = handles.axesPreview;
+axes(ax);
 vidRes=vid.VideoResolution;
 nBands=vid.NumberOfBands;
 hImage=image(zeros(vidRes(2),vidRes(1),nBands));
 preview(vid,hImage);
+
 
 %{
 
@@ -680,9 +679,6 @@ function buttonSelectROI_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global vid axPos;
 axes(handles.axesPreview);
-% frame=getsnapshot(vid);
-% imagesc(frame);
-% title('Select the ROI');
 rectangleROI = imrect();
 setColor(rectangleROI,'red');
 rectangleROI = round(wait(rectangleROI));
@@ -693,31 +689,8 @@ hImage=image(zeros(vidRes(2),vidRes(1),nBands));
 vid.ROIPosition = [rectangleROI(1) rectangleROI(2) rectangleROI(3) rectangleROI(4)];
 newPos = [axPos(1), axPos(2) + axPos(4) - round(axPos(4)*vidRes(2)/rectangleROI(4)), round(axPos(3)*vidRes(1)/rectangleROI(3)), round(axPos(4)*vidRes(2)/rectangleROI(4))];
 preview(vid,hImage);
-% frame=getsnapshot(vid);
-% axes(handles.axesROI);
 set(handles.axesPreview, 'Position', newPos);
-% set(handles.axesROI, 'Units', 'pixels', 'Position', [16, 73, 300*rectangleROI(3)/rectangleROI(4), 300]);
-% imagesc(frame);
 
-%{
-
-% --- Executes on button press in buttonROIDyCam.
-function buttonROIDyCam_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonROIDyCam (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-global vid;
-num1 = str2double(get(handles.inputIntensityHigherBound,'String'));
-% set(handles.axesROI, 'Units', 'pixels', 'Position', [16, 73, 300*rectangleROI(3)/rectangleROI(4),300]);
-while (1)
-    axes(handles.axesROI);
-	frame=getsnapshot(vid);	
-    frame_ad = imadjust(frame,[0 num1],[0 1]);
-    imshow(frame_ad);
-	drawnow;
-end
-
-%}
 
 % --- Executes on button press in buttonDrawLine.
 function buttonDrawLine_Callback(hObject, eventdata, handles)
@@ -730,13 +703,8 @@ if ~isempty(line_timer)
     delete(line_timer);
     clear global line_timer;
 end
-% num1 = str2double(get(handles.inputIntensityHigherBound,'String'));
-% i=0;
 addpath('internal functions');
 linewidth = 15;
-%frame=getsnapshot(vid);
-%frame_ad = imadjust(frame,[0 num1],[0 1]);
-%imshow(frame_ad);
 lineSignal = imline();
 setColor(lineSignal,'red');
 lineSignal = wait(lineSignal);
@@ -754,33 +722,10 @@ preview(vid,hImage);
 
 %}
 
-%{
-
-axes(handles.axesLine);
-while (1)
-%     preview(vid);
-%     i=i+1;
-	% axes(handles.axesROI);
-	frame=getsnapshot(vid);	
-    % frame_ad = imadjust(frame,[0 num1],[0 1]);
-    % imshow(frame_ad);
-    c = adjustSpectralLine(frame, line_x, line_y, linewidth);
-    spectrum = mean(c); 
-    plot(spectrum);
-    % title('Dynamic Intensity Curve');
-	drawnow;
-%     start(vid);
-%     stoppreview(vid);
-%     filename=['F:\matlab control\',num2str(i),'.tif'];
-%     imwrite(getdata(vid), filename,'tif');
-%     stop(vid);
-
-end
-
-%}
 
 lineinterval = str2double(get(handles.inputExposure,'String'));
 ax = handles.axesLine;
+
 line_timer = timer('Period',lineinterval,'ExecutionMode','fixedRate');
 line_timer.TimerFcn = {@LineFrame, line_x, line_y, linewidth, ax};
 start(line_timer);
@@ -789,12 +734,11 @@ function LineFrame(~,~, line_x, line_y, linewidth, ax)
 
 global vid;
 frame=getsnapshot(vid);
-% filename=['C:\Users\Arthur Li\Documents\MATLAB\Brillouin Scan\test.tif'];
-% imwrite(frame, filename,'tif');
 c = adjustSpectralLine(frame, line_x, line_y, linewidth);
 spectrum = mean(c); 
 plot(ax,spectrum);
 drawnow;
+
 
 
 function inputIntensityHigherBound_Callback(hObject, eventdata, handles)
@@ -827,7 +771,7 @@ function buttonCal_Callback(hObject, eventdata, handles)
 global vid;
 calIndex = get(handles.inputCal,'String');
 frame=getsnapshot(vid);
-% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+% bound = str2double(get(handles.inputIntensityHigherBound,'String'));
 % frame = imadjust(frame,[0 bound],[0 1]);
 path = get(handles.inputSaveLocation,'String');
 filename=[path,'\', calIndex,'.tif'];
@@ -933,16 +877,25 @@ function buttonExit_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonExit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid;
-stoppreview(vid);
-buttonDisconnect_Callback(hObject, eventdata, handles);
 buttonDeleteTimer_Callback(hObject, eventdata, handles);
+buttonDisconnect_Callback(hObject, eventdata, handles);
+global vid;
+if ~isempty(vid)
+    stoppreview(vid);
+end
 clear global vid axPos;
 close();
 
 
 % --- Executes on button press in buttonScanPause.
 function buttonScanPause_Callback(hObject, eventdata, handles)
+global scan_timer;
+if isempty(scan_timer)
+    fprintf("No scanning tasks found\n");
+else
+    stop(scan_timer);
+    fprintf("Scan Paused\n");
+end
 % hObject    handle to buttonScanPause (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -950,6 +903,18 @@ function buttonScanPause_Callback(hObject, eventdata, handles)
 
 % --- Executes on button press in buttonScanCal.
 function buttonScanCal_Callback(hObject, eventdata, handles)
+global vid;
+index = get(handles.inputCal, 'String');
+calI = get(handles.textIndexI,'String');
+calJ = get(handles.textIndexJ,'String');
+frame=getsnapshot(vid);
+% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+% frame = imadjust(frame,[0 bound],[0 1]);
+path = get(handles.inputSaveLocation,'String');
+filename=[path,'\Cal_before_',index,'_',calI,'_',calJ,'.tif'];
+imwrite(frame, filename,'tif');
+fprintf("Calibration image taken\n");
+
 % hObject    handle to buttonScanCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -957,6 +922,14 @@ function buttonScanCal_Callback(hObject, eventdata, handles)
 
 % --- Executes on button press in buttonScanResume.
 function buttonScanResume_Callback(hObject, eventdata, handles)
+global scan_timer;
+if isempty(scan_timer)
+    fprintf("No scanning tasks found\n");
+else
+    start(scan_timer);
+    fprintf("Scan Resumed\n");
+end
+% hObject    handle to butto
 % hObject    handle to buttonScanResume (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

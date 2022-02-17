@@ -1,15 +1,13 @@
 function StepScan(mTimer,~,uiHandles,~,xcount,ycount,xstep,ystep,tolerance)
 global vid;
-% addpath('internal functions');
-% linewidth = 15;
-% line_x = [tmp_1(1,1) tmp_1(2,1)];
-% line_y = [tmp_1(1,2) tmp_1(2,2)];
 persistent i j xlastpos;
 if isempty(i)
     i = 1;
+    set(uiHandles.textIndexI,'String',num2str(i));
 end
 if isempty(j)
     j = 1;
+    set(uiHandles.textIndexJ,'String',num2str(j));
 end
 
 index = get(uiHandles.inputCal, 'String');
@@ -48,9 +46,6 @@ if (j > ycount)
     return
 end
 
-set(uiHandles.textIndexI,'String',num2str(i));
-set(uiHandles.textIndexJ,'String',num2str(j));
-
 frame=getsnapshot(vid);
 % bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
 % frame = imadjust(frame,[0 bound],[0 1]);
@@ -73,4 +68,7 @@ else
     SetPos('y',ypos + ystep);
     j = j + 1;
 end
+
+set(uiHandles.textIndexI,'String',num2str(i));
+set(uiHandles.textIndexJ,'String',num2str(j));
 return
