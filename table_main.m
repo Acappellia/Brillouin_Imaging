@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 15-Feb-2022 21:10:33
+% Last Modified by GUIDE v2.5 21-Feb-2022 16:28:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -53,7 +53,7 @@ function table_main_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to table_main (see VARARGIN)
 
 % Choose default command line output for table_main
-clear global scom scan_timer vid line_timer axPos;
+clear global scom scan_timer vid line_timer gray_timer axPos frame;
 handles.output = hObject;
 
 % Update handles structure
@@ -548,7 +548,7 @@ if ~isempty(scan_timer)
     stop(scan_timer);
     delete(scan_timer); 
     clear global scan_timer;
-    index = get(uiHandles.inputSaveIndex, 'String');
+    index = get(uiHandles.inputCal, 'String');
     set(uiHandles.inputSaveIndex,'String',num2str(index + 1));
     fprintf('Scan Interrupted\n')
 end
@@ -606,12 +606,22 @@ function buttonPreview_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonPreview (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid axPos;
-global line_timer;
+global vid axPos frame;
+global line_timer gray_timer frame_timer;
 if ~isempty(line_timer)
     stop(line_timer);
     delete(line_timer);
     clear global line_timer;
+end
+if ~isempty(frame_timer)
+    stop(frame_timer);
+    delete(frame_timer);
+    clear global frame_timer;
+end
+if ~isempty(gray_timer)
+    stop(gray_timer);
+    delete(gray_timer);
+    clear global gray_timer;
 end
 if ~isempty(vid)
     stoppreview(vid);
@@ -622,29 +632,38 @@ else
     set(handles.axesPreview, 'Position', axPos);
 end
 
-% vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
-vid = videoinput('winvideo', 1, 'RGB24_960x540');
+vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
+% vid = videoinput('winvideo', 1, 'RGB24_960x540');
 set(vid,'ReturnedColorSpace','grayscale');
 set(vid,'TriggerRepeat',Inf);
 set(vid,'FramesPerTrigger',1);
 vid.FrameGrabInterval=1;
 
-%{
+%
 
 % Change following lines into comments only in testing
 % TBD
 
 src=getselectedsource(vid);
 src.ExposureTime = str2double(get(handles.inputExposure,'String'));
-intensityHigherBound = str2double(get(handles.inputIntensityHigherBound,'String'));
 
-%}
-ax = handles.axesPreview;
-axes(ax);
+%
+
+axes(handles.axesPreview);
 vidRes=vid.VideoResolution;
 nBands=vid.NumberOfBands;
 hImage=image(zeros(vidRes(2),vidRes(1),nBands));
 preview(vid,hImage);
+
+interval = str2double(get(handles.inputExposure,'String'));
+frame_timer = timer('Period',interval,'ExecutionMode','fixedRate');
+frame_timer.TimerFcn = {@Frame};
+start(frame_timer);
+
+function Frame(~,~)
+global vid frame;
+frame = getsnapshot(vid);
+
 
 
 %{
@@ -677,11 +696,17 @@ function buttonSelectROI_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonSelectROI (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid axPos;
-axes(handles.axesPreview);
+global vid axPos gray_timer;
+if isempty(gray_timer)
+    axes(handles.axesPreview);
+else
+    axes(handles.axesGray);
+    stop(gray_timer);
+end
 rectangleROI = imrect();
 setColor(rectangleROI,'red');
 rectangleROI = round(wait(rectangleROI));
+axes(handles.axesPreview);
 stoppreview(vid);
 vidRes = vid.VideoResolution;
 nBands=vid.NumberOfBands;
@@ -690,6 +715,9 @@ vid.ROIPosition = [rectangleROI(1) rectangleROI(2) rectangleROI(3) rectangleROI(
 newPos = [axPos(1), axPos(2) + axPos(4) - round(axPos(4)*vidRes(2)/rectangleROI(4)), round(axPos(3)*vidRes(1)/rectangleROI(3)), round(axPos(4)*vidRes(2)/rectangleROI(4))];
 preview(vid,hImage);
 set(handles.axesPreview, 'Position', newPos);
+if ~isempty(gray_timer)
+    start(gray_timer);
+end
 
 
 % --- Executes on button press in buttonDrawLine.
@@ -697,11 +725,17 @@ function buttonDrawLine_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonDrawLine (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid line_timer;
+global  line_timer gray_timer;
 if ~isempty(line_timer)
     stop(line_timer);
     delete(line_timer);
     clear global line_timer;
+end
+if isempty(gray_timer)
+    axes(handles.axesPreview);
+else
+    axes(handles.axesGray);
+    stop(gray_timer);
 end
 addpath('internal functions');
 linewidth = 15;
@@ -729,11 +763,13 @@ ax = handles.axesLine;
 line_timer = timer('Period',lineinterval,'ExecutionMode','fixedRate');
 line_timer.TimerFcn = {@LineFrame, line_x, line_y, linewidth, ax};
 start(line_timer);
+if ~isempty(gray_timer)
+    start(gray_timer);
+end
 
 function LineFrame(~,~, line_x, line_y, linewidth, ax)
 
-global vid;
-frame=getsnapshot(vid);
+global frame;
 c = adjustSpectralLine(frame, line_x, line_y, linewidth);
 spectrum = mean(c); 
 plot(ax,spectrum);
@@ -768,14 +804,17 @@ function buttonCal_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid;
+global frame;
 calIndex = get(handles.inputCal,'String');
-frame=getsnapshot(vid);
-% bound = str2double(get(handles.inputIntensityHigherBound,'String'));
-% frame = imadjust(frame,[0 bound],[0 1]);
+if get(handles.checkboxApplyGrayscale,'Value')
+    bound = str2double(get(handles.inputIntensityHigherBound,'String'));
+    frame_adj = imadjust(frame,[0 bound],[0 1]);
+else
+    frame_adj = frame;
+end
 path = get(handles.inputSaveLocation,'String');
 filename=[path,'\', calIndex,'.tif'];
-imwrite(frame, filename,'tif');
+imwrite(frame_adj, filename,'tif');
 set(handles.inputCal, 'String', num2str(str2double(calIndex)+1));
 
 
@@ -867,7 +906,7 @@ if ~isempty(timers)
     stop(timers);
     delete(timers);
 end
-clear global line_timer scan_timer
+clear global line_timer gray_timer scan_timer 
 fprintf('All timer deleted\n');
 
 
@@ -883,7 +922,7 @@ global vid;
 if ~isempty(vid)
     stoppreview(vid);
 end
-clear global vid axPos;
+clear global vid axPos frame;
 close();
 
 
@@ -891,10 +930,10 @@ close();
 function buttonScanPause_Callback(hObject, eventdata, handles)
 global scan_timer;
 if isempty(scan_timer)
-    fprintf("No scanning tasks found\n");
+    fprintf('No scanning tasks found\n');
 else
     stop(scan_timer);
-    fprintf("Scan Paused\n");
+    fprintf('Scan Paused\n');
 end
 % hObject    handle to buttonScanPause (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -903,17 +942,20 @@ end
 
 % --- Executes on button press in buttonScanCal.
 function buttonScanCal_Callback(hObject, eventdata, handles)
-global vid;
+global frame;
 index = get(handles.inputCal, 'String');
 calI = get(handles.textIndexI,'String');
 calJ = get(handles.textIndexJ,'String');
-frame=getsnapshot(vid);
-% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
-% frame = imadjust(frame,[0 bound],[0 1]);
+if get(handles.checkboxApplyGrayscale,'Value')
+    bound = str2double(get(handles.inputIntensityHigherBound,'String'));
+    frame_adj = imadjust(frame,[0 bound],[0 1]);
+else
+    frame_adj = frame;
+end
 path = get(handles.inputSaveLocation,'String');
-filename=[path,'\Cal_before_',index,'_',calI,'_',calJ,'.tif'];
-imwrite(frame, filename,'tif');
-fprintf("Calibration image taken\n");
+filename=[path,'\Cal_before_',index,'_',calJ,'_',calI,'.tif'];
+imwrite(frame_adj, filename,'tif');
+fprintf('Calibration image taken\n');
 
 % hObject    handle to buttonScanCal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -924,12 +966,49 @@ fprintf("Calibration image taken\n");
 function buttonScanResume_Callback(hObject, eventdata, handles)
 global scan_timer;
 if isempty(scan_timer)
-    fprintf("No scanning tasks found\n");
+    fprintf('No scanning tasks found\n');
 else
     start(scan_timer);
-    fprintf("Scan Resumed\n");
+    fprintf('Scan Resumed\n');
 end
 % hObject    handle to butto
 % hObject    handle to buttonScanResume (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in buttonUpdateGrayscale.
+function buttonUpdateGrayscale_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonUpdateGrayscale (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global  gray_timer;
+if ~isempty(gray_timer)
+    stop(gray_timer);
+    delete(gray_timer);
+    clear global gray_timer;
+end
+
+
+interval = str2double(get(handles.inputExposure,'String'));
+bound = str2double(get(handles.inputIntensityHigherBound,'String'));
+ax = handles.axesGray;
+
+gray_timer = timer('Period',interval,'ExecutionMode','fixedRate');
+gray_timer.TimerFcn = {@GrayFrame, bound, ax};
+start(gray_timer);
+
+function GrayFrame(~,~, bound, ax)
+
+global frame;
+frame_adj = imadjust(frame,[0 bound],[0 1]);
+imshow(frame_adj, 'Parent', ax);
+
+
+% --- Executes on button press in checkboxApplyGrayscale.
+function checkboxApplyGrayscale_Callback(hObject, eventdata, handles)
+% hObject    handle to checkboxApplyGrayscale (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkboxApplyGrayscale

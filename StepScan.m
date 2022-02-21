@@ -1,5 +1,5 @@
 function StepScan(mTimer,~,uiHandles,~,xcount,ycount,xstep,ystep,tolerance)
-global vid;
+global frame;
 persistent i j xlastpos;
 if isempty(i)
     i = 1;
@@ -46,29 +46,34 @@ if (j > ycount)
     return
 end
 
-frame=getsnapshot(vid);
-% bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
-% frame = imadjust(frame,[0 bound],[0 1]);
-imwrite(frame,filename,'tif');
+if get(uiHandles.checkboxApplyGrayscale,'Value')
+    bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+    frame_adj = imadjust(frame,[0 bound],[0 1]);
+else
+    frame_adj = frame;
+end
+imwrite(frame_adj,filename,'tif');
 
 if (mod(j,2) == 1)
     if (i < xcount)
         SetPos('x',xpos + xstep);
         i = i + 1;
+        set(uiHandles.textIndexI,'String',num2str(i));
         return
     end
     SetPos('y',ypos + ystep);
     j = j + 1;
+    set(uiHandles.textIndexJ,'String',num2str(j));
 else
     if (i > 1)
         SetPos('x',xpos - xstep);
         i = i - 1;
+        set(uiHandles.textIndexI,'String',num2str(i));
         return
     end
     SetPos('y',ypos + ystep);
     j = j + 1;
+    set(uiHandles.textIndexJ,'String',num2str(j));
 end
 
-set(uiHandles.textIndexI,'String',num2str(i));
-set(uiHandles.textIndexJ,'String',num2str(j));
 return
