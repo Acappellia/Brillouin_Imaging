@@ -53,7 +53,7 @@ function table_main_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to table_main (see VARARGIN)
 
 % Choose default command line output for table_main
-clear global scom scan_timer vid line_timer gray_timer axPos frame;
+clear global scom scan_timer vid line_timer gray_timer axPos frame frame_timer;
 handles.output = hObject;
 
 % Update handles structure
@@ -606,7 +606,7 @@ function buttonPreview_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonPreview (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global vid axPos frame;
+global vid axPos;
 global line_timer gray_timer frame_timer;
 if ~isempty(line_timer)
     stop(line_timer);
@@ -906,7 +906,7 @@ if ~isempty(timers)
     stop(timers);
     delete(timers);
 end
-clear global line_timer gray_timer scan_timer 
+clear global line_timer gray_timer scan_timer frame_timer 
 fprintf('All timer deleted\n');
 
 
