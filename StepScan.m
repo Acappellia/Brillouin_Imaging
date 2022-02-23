@@ -1,6 +1,10 @@
 function StepScan(mTimer,~,uiHandles,~,xcount,ycount,xstep,ystep,tolerance)
 global frame;
-persistent i j xlastpos;
+persistent i j count xlastpos;
+if isempty(count)
+    count = 1;
+    set(uiHandles.textCount,'String',num2str(count));
+end
 if isempty(i)
     i = 1;
     set(uiHandles.textIndexI,'String',num2str(i));
@@ -13,7 +17,7 @@ end
 index = get(uiHandles.inputCal, 'String');
 
 path = get(uiHandles.inputSaveLocation,'String');
-filename=[path,'\',index,'_',num2str(j),'_',num2str(i),'.tif'];
+filename=[path,'\',index,'_',num2str(j),'_',num2str(i),'_#',num2str(count),'.tif'];
 
 
 pos = QueryPos;
@@ -37,12 +41,18 @@ end
 if (j > ycount)
     set(uiHandles.inputCal,'String',num2str(str2double(index) + 1));
     set(uiHandles.textIndexI,'String','0');
-    set(uiHandles.textIndexJ,'String','0');
+    set(uiHandles.textIndexJ,'String','0'); 
+    set(uiHandles.textCount,'String','0');
+    set(uiHandles.buttonScanStart,'Enable','on');
+    set(uiHandles.buttonScanPause,'Enable','off');
+    set(uiHandles.buttonScanResume,'Enable','off');
+    set(uiHandles.buttonScanCal,'Enable','off');
     stop(mTimer);
     delete(mTimer);
     clear global scan_timer;
-    clear i j xlastpos;
+    clear i j count xlastpos;
     fprintf('SCAN COMPLETE\n')
+    
     return
 end
 
@@ -54,6 +64,9 @@ else
 end
 imwrite(frame_adj,filename,'tif');
 
+
+count = count + 1;
+set(uiHandles.textCount,'String',num2str(count));
 if (mod(j,2) == 1)
     if (i < xcount)
         SetPos('x',xpos + xstep);
