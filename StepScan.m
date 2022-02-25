@@ -1,37 +1,50 @@
-function StepScan(mTimer,~,terminate,uiHandles,~,xcount,ycount,xstep,ystep,tolerance)
+function StepScan(mTimer,~,terminate,index, handles,pauseInterval,xcount,ycount,xstep,ystep,tolerance,path,isGray,bound)
 global frame;
-persistent i j count xOriginPos;
-index = get(uiHandles.inputCal, 'String');
+persistent i j count xOriginPos yOriginPos selfPause;
 if terminate
-    set(uiHandles.inputCal,'String',num2str(str2double(index) + 1));
-    set(uiHandles.textIndexI,'String','0');
-    set(uiHandles.textIndexJ,'String','0'); 
-    set(uiHandles.textCount,'String','0');
-    set(uiHandles.buttonScanStart,'Enable','on');
-    set(uiHandles.buttonScanPause,'Enable','off');
-    set(uiHandles.buttonScanResume,'Enable','off');
-    set(uiHandles.buttonScanCal,'Enable','off');
+    set(handles.inputCal,'String',num2str(str2double(index) + 1));
+    set(handles.textIndexI,'String','0');
+    set(handles.textIndexJ,'String','0'); 
+    set(handles.textCount,'String','0');
+    set(handles.buttonScanStart,'Enable','on');
+    set(handles.buttonScanPause,'Enable','off');
+    set(handles.buttonScanResume,'Enable','off');
+    set(handles.buttonScanCal,'Enable','off');
     stop(mTimer);
     delete(mTimer);
     clear global scan_timer;
-    clear i j count xlastpos;
+    clear i j count xOriginPos yOriginPos;
     fprintf('SCAN Interrupted\n');
     return
 end
 if isempty(count)
     count = 1;
-    set(uiHandles.textCount,'String',num2str(count));
+    set(handles.textCount,'String',num2str(count));
 end
 if isempty(i)
     i = 1;
-    set(uiHandles.textIndexI,'String',num2str(i));
+    set(handles.textIndexI,'String',num2str(i));
 end
 if isempty(j)
     j = 1;
-    set(uiHandles.textIndexJ,'String',num2str(j));
+    set(handles.textIndexJ,'String',num2str(j));
 end
 
-path = get(uiHandles.inputSaveLocation,'String');
+if isempty(selfPause)
+    selfPause = 1;
+else
+    if pauseInterval > 1 && mod(count,pauseInterval) == 0
+        stop(mTimer);
+        clear selfPause;
+        sound(sin(0.5*pi*25*(1:8000)/100));
+        set(handles.buttonScanPause,'Enable','off');
+        set(handles.buttonScanResume,'Enable','on');
+        set(handles.buttonScanCal,'Enable','on');
+        return
+    end
+end
+    
+
 filename=[path,'\',index,'_',num2str(j),'_',num2str(i),'.tif'];
 
 
@@ -41,44 +54,42 @@ ypos = str2double(pos(2));
 if isempty(xOriginPos)
     xOriginPos = xpos;
 end
-set(uiHandles.inputXPos, 'String', pos(1));
-set(uiHandles.inputYPos, 'String', pos(2));
-if abs(xOriginPos + xstep * (i - 1) - xpos) > tolerance
-    set(uiHandles.inputCal,'String',num2str(str2double(index) + 1));
-    set(uiHandles.textIndexI,'String','0');
-    set(uiHandles.textIndexJ,'String','0'); 
-    set(uiHandles.textCount,'String','0');
-    set(uiHandles.buttonScanStart,'Enable','on');
-    set(uiHandles.buttonScanPause,'Enable','off');
-    set(uiHandles.buttonScanResume,'Enable','off');
-    set(uiHandles.buttonScanCal,'Enable','off');
+if isempty(yOriginPos)
+    yOriginPos = ypos;
+end
+set(handles.inputXPos, 'String', pos(1));
+set(handles.inputYPos, 'String', pos(2));
+
+if abs(xOriginPos + xstep * (i - 1) - xpos) > tolerance || abs(yOriginPos + ystep * (j - 1) - ypos) > tolerance
     stop(mTimer);
-    delete(mTimer);
-    clear global scan_timer;
-    clear i j count xOriginPos;
-    fprintf('Table movement cannot keep up! Try increasing the interval!\n');
+    pause(0.36);
+    SetPos('xy', [xOriginPos + xstep * (i - 1), yOriginPos + ystep * (j - 1)]);
+%    set(handles.buttonScanResume,'Enable','on');
+%    set(handles.buttonScanPause,'Enable','off');
+%    fprintf('Table movement cannot keep up, scan paused...\n');
+    pause(0.36);
+    start(mTimer);
     return
 end
 
 if (j > ycount)
-    set(uiHandles.inputCal,'String',num2str(str2double(index) + 1));
-    set(uiHandles.textIndexI,'String','0');
-    set(uiHandles.textIndexJ,'String','0'); 
-    set(uiHandles.textCount,'String','0');
-    set(uiHandles.buttonScanStart,'Enable','on');
-    set(uiHandles.buttonScanPause,'Enable','off');
-    set(uiHandles.buttonScanResume,'Enable','off');
-    set(uiHandles.buttonScanCal,'Enable','off');
+    set(handles.inputCal,'String',num2str(str2double(index) + 1));
+    set(handles.textIndexI,'String','0');
+    set(handles.textIndexJ,'String','0'); 
+    set(handles.textCount,'String','0');
+    set(handles.buttonScanStart,'Enable','on');
+    set(handles.buttonScanPause,'Enable','off');
+    set(handles.buttonScanResume,'Enable','off');
+    set(handles.buttonScanCal,'Enable','off');
     stop(mTimer);
     delete(mTimer);
     clear global scan_timer;
-    clear i j count xOriginPos;
+    clear i j count xOriginPos yOriginPos;
     fprintf('SCAN COMPLETE\n');
     return
 end
 
-if get(uiHandles.checkboxApplyGrayscale,'Value')
-    bound = str2double(get(uiHandles.inputIntensityHigherBound,'String'));
+if isGray
     frame_adj = imadjust(frame,[0 bound],[0 1]);
 else
     frame_adj = frame;
@@ -87,27 +98,27 @@ imwrite(frame_adj,filename,'tif');
 
 
 count = count + 1;
-set(uiHandles.textCount,'String',num2str(count));
+set(handles.textCount,'String',num2str(count));
 if (mod(j,2) == 1)
     if (i < xcount)
-        SetPos('x',xpos + xstep);
+        SetPos('x', xOriginPos + xstep * i);
         i = i + 1;
-        set(uiHandles.textIndexI,'String',num2str(i));
+        set(handles.textIndexI,'String',num2str(i));
         return
     end
-    SetPos('y',ypos + ystep);
+    SetPos('y', yOriginPos + ystep * j);
     j = j + 1;
-    set(uiHandles.textIndexJ,'String',num2str(j));
+    set(handles.textIndexJ,'String',num2str(j));
 else
     if (i > 1)
-        SetPos('x',xpos - xstep);
+        SetPos('x', xOriginPos + xstep * (i - 2));
         i = i - 1;
-        set(uiHandles.textIndexI,'String',num2str(i));
+        set(handles.textIndexI,'String',num2str(i));
         return
     end
-    SetPos('y',ypos + ystep);
+    SetPos('y', yOriginPos + ystep * j);
     j = j + 1;
-    set(uiHandles.textIndexJ,'String',num2str(j));
+    set(handles.textIndexJ,'String',num2str(j));
 end
 
 return

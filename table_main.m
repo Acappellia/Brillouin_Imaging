@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 21-Feb-2022 16:28:40
+% Last Modified by GUIDE v2.5 25-Feb-2022 21:29:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -547,7 +547,8 @@ end
 function buttonScanStop_Callback(hObject, eventdata, handles)
 global scan_timer
 if ~isempty(scan_timer)
-    StepScan(scan_timer,[],1,handles,[],[],[],[],[],[]);
+    index = get(handles.inputCal, 'String');
+    StepScan(scan_timer,[],1,index,handles,[],[],[],[],[],[],[],[],[]);
 else
     fprintf('Not Scanning\n');
 end
@@ -563,16 +564,23 @@ global scan_timer;
 if ~isempty(scan_timer)
     fprintf('Already Running!\n')
 else
+    index = get(handles.inputCal, 'String');
     scanInterval = str2double(get(handles.inputScanInterval,'String'));
     scanXCount = str2double(get(handles.inputXScanCount,'String'));
     scanYCount = str2double(get(handles.inputYScanCount,'String'));
     tolerance = str2double(get(handles.inputScanTolerance,'String'));
     scanXStep = str2double(get(handles.inputXScanStep,'String'));
     scanYStep = str2double(get(handles.inputYScanStep,'String'));
+    path = get(handles.inputSaveLocation,'String');
+    isGray = get(handles.checkboxApplyGrayscale,'Value');
+    bound = str2double(get(handles.inputIntensityHigherBound,'String'));
+    pauseInterval = str2double(get(handles.inputPauseInterval,'String'));
     scan_timer = timer('StartDelay',1,'Period',scanInterval,'ExecutionMode','fixedRate','TasksToExecute',scanYCount * scanXCount + 1);
-    scan_timer.TimerFcn = {@StepScan, 0, handles, scanInterval, scanXCount, scanYCount, scanXStep, scanYStep, tolerance};
+    scan_timer.TimerFcn = {@StepScan, 0, index, handles, pauseInterval, scanXCount, scanYCount, scanXStep, scanYStep, tolerance, path, isGray, bound};
     start(scan_timer);
 end
+set(handles.buttonScanPause,'SelectionHighlight','off');
+set(handles.buttonScanPause,'SelectionHighlight','off');
 set(handles.buttonScanPause,'Enable','on');
 % hObject    handle to buttonScanStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -915,10 +923,8 @@ function buttonDeleteTimer_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(hObject,'Enable','off');
-global line_timer gray_timer scan_timer frame_timer;
-if ~isempty(scan_timer)
-    StepScan(scan_timer,[],1,handles,[],[],[],[],[],[]);
-end
+global line_timer gray_timer frame_timer;
+buttonScanStop_Callback(hObject, eventdata, handles);
 for timer = [line_timer gray_timer frame_timer]
     if ~isempty(timer)
         stop(timer);
@@ -1045,3 +1051,26 @@ function checkboxApplyGrayscale_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkboxApplyGrayscale
+
+
+
+function inputPauseInterval_Callback(hObject, eventdata, handles)
+% hObject    handle to inputPauseInterval (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of inputPauseInterval as text
+%        str2double(get(hObject,'String')) returns contents of inputPauseInterval as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function inputPauseInterval_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputPauseInterval (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
