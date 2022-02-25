@@ -547,17 +547,10 @@ end
 function buttonScanStop_Callback(hObject, eventdata, handles)
 global scan_timer
 if ~isempty(scan_timer)
-    stop(scan_timer);
-    delete(scan_timer); 
-    clear global scan_timer;
-    index = get(uiHandles.inputCal, 'String');
-    set(uiHandles.inputSaveIndex,'String',num2str(index + 1));
-    fprintf('Scan Interrupted\n')
+    StepScan(scan_timer,[],1,handles,[],[],[],[],[],[]);
+else
+    fprintf('Not Scanning\n');
 end
-set(handles.buttonScanStart,'Enable','on');
-set(handles.buttonScanPause,'Enable','off');
-set(handles.buttonScanResume,'Enable','off');
-set(handles.buttonScanCal,'Enable','off');
 % hObject    handle to buttonScanStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -577,7 +570,7 @@ else
     scanXStep = str2double(get(handles.inputXScanStep,'String'));
     scanYStep = str2double(get(handles.inputYScanStep,'String'));
     scan_timer = timer('StartDelay',1,'Period',scanInterval,'ExecutionMode','fixedRate','TasksToExecute',scanYCount * scanXCount + 1);
-    scan_timer.TimerFcn = {@StepScan, handles, scanInterval, scanXCount, scanYCount, scanXStep, scanYStep, tolerance};
+    scan_timer.TimerFcn = {@StepScan, 0, handles, scanInterval, scanXCount, scanYCount, scanXStep, scanYStep, tolerance};
     start(scan_timer);
 end
 set(handles.buttonScanPause,'Enable','on');
@@ -923,7 +916,10 @@ function buttonDeleteTimer_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 set(hObject,'Enable','off');
 global line_timer gray_timer scan_timer frame_timer;
-for timer = [frame_timer line_timer gray_timer scan_timer]
+if ~isempty(scan_timer)
+    StepScan(scan_timer,[],1,handles,[],[],[],[],[],[]);
+end
+for timer = [line_timer gray_timer frame_timer]
     if ~isempty(timer)
         stop(timer);
         delete(timer);
@@ -934,7 +930,7 @@ if ~isempty(timers)
     stop(timers);
     delete(timers);
 end
-clear global line_timer gray_timer scan_timer frame_timer;
+clear global line_timer gray_timer frame_timer;
 fprintf('All timer deleted\n');
 set(hObject,'Enable','on');
 
@@ -950,6 +946,7 @@ buttonDisconnect_Callback(hObject, eventdata, handles);
 global vid;
 if ~isempty(vid)
     stoppreview(vid);
+    delete(vid);
 end
 clear global vid axPos frame;
 close();
