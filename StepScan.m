@@ -48,7 +48,7 @@ end
 filename=[path,'\',index,'_',num2str(j),'_',num2str(i),'.tif'];
 
 
-pos = QueryPos;
+[pos,~] = QueryPos;
 xpos = str2double(pos(1));
 ypos = str2double(pos(2));
 if isempty(xOriginPos)
@@ -101,22 +101,26 @@ count = count + 1;
 set(handles.textCount,'String',num2str(count));
 if (mod(j,2) == 1)
     if (i < xcount)
-        SetPos('x', xOriginPos + xstep * i);
+        %SetPos('x', xOriginPos + xstep * i);
+        MovPos('x', xstep);
         i = i + 1;
         set(handles.textIndexI,'String',num2str(i));
         return
     end
-    SetPos('y', yOriginPos + ystep * j);
+    %SetPos('y', yOriginPos + ystep * j);
+    MovPos('y', ystep);
     j = j + 1;
     set(handles.textIndexJ,'String',num2str(j));
 else
     if (i > 1)
-        SetPos('x', xOriginPos + xstep * (i - 2));
+        %SetPos('x', xOriginPos + xstep * (i - 2));
+        MovPos('x', -xstep);
         i = i - 1;
         set(handles.textIndexI,'String',num2str(i));
         return
     end
-    SetPos('y', yOriginPos + ystep * j);
+    %SetPos('y', yOriginPos + ystep * j);
+    MovPos('y', ystep);
     j = j + 1;
     set(handles.textIndexJ,'String',num2str(j));
 end

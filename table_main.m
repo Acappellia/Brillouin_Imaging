@@ -238,7 +238,7 @@ end
 
 % --- Executes on button press in buttonGetPos.
 function buttonGetPos_Callback(hObject, eventdata, handles)
-pos = QueryPos;
+[pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
 set(handles.inputYPos,'String', pos(2));
 set(handles.inputZPos,'String', pos(3));
@@ -276,8 +276,8 @@ x = str2double(get(handles.inputXPos,'String'));
 y = str2double(get(handles.inputYPos,'String'));
 z = str2double(get(handles.inputZPos,'String'));
 SetPos('xyz',[x,y,z]);
-IsBusy(hObject);
-pos = QueryPos;
+% IsBusy(hObject);
+[pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
 set(handles.inputYPos,'String', pos(2));
 set(handles.inputZPos,'String', pos(3));
@@ -296,12 +296,12 @@ function buttonConnect_ButtonDownFcn(hObject, eventdata, handles)
 
 % --- Executes on button press in buttonXStepMove.
 function buttonXStepMove_Callback(hObject, eventdata, handles)
-pos = QueryPos;
+[pos,~] = QueryPos;
 x = str2double(pos(1));
 step = str2double(get(handles.inputXStepMove,'String'));
 SetPos('x', x + step);
-IsBusy(hObject);
-pos = QueryPos;
+% IsBusy(hObject);
+[pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
 % hObject    handle to buttonXStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -310,12 +310,12 @@ set(handles.inputXPos,'String', pos(1));
 
 % --- Executes on button press in buttonYStepMove.
 function buttonYStepMove_Callback(hObject, eventdata, handles)
-pos = QueryPos;
+[pos,~] = QueryPos;
 y = str2double(pos(2));
 step = str2double(get(handles.inputYStepMove,'String'));
 SetPos('y', y + step);
-IsBusy(hObject);
-pos = QueryPos;
+% IsBusy(hObject);
+[pos,~] = QueryPos;
 set(handles.inputYPos,'String', pos(2));
 % hObject    handle to buttonYStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -324,12 +324,12 @@ set(handles.inputYPos,'String', pos(2));
 
 % --- Executes on button press in buttonZStepMove.
 function buttonZStepMove_Callback(hObject, eventdata, handles)
-pos = QueryPos;
+[pos,~] = QueryPos;
 z = str2double(pos(3));
 step = str2double(get(handles.inputZStepMove,'String'));
 SetPos('z', z + step);
-IsBusy(hObject);
-pos = QueryPos;
+% IsBusy(hObject);
+[pos,~] = QueryPos;
 set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonZStepMove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
