@@ -147,7 +147,7 @@ end
 function buttonConnect_Callback(hObject, eventdata, handles)
 set(hObject,'Enable','off');
 global scom;
-scom = instrfind('Type', 'serial', 'Port', 'COM3', 'Tag', '');
+scom = instrfind('Type', 'serial', 'Port', 'COM1', 'Tag', '');
 if isempty(scom)
     port = get(handles.inputPort,'String');
     baudrate = str2double(get(handles.inputBaudrate,'String'));
@@ -241,7 +241,7 @@ function buttonGetPos_Callback(hObject, eventdata, handles)
 [pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
 set(handles.inputYPos,'String', pos(2));
-set(handles.inputZPos,'String', pos(3));
+% set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonGetPos (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -274,13 +274,14 @@ end
 function buttonSetPos_Callback(hObject, eventdata, handles)
 x = str2double(get(handles.inputXPos,'String'));
 y = str2double(get(handles.inputYPos,'String'));
-z = str2double(get(handles.inputZPos,'String'));
-SetPos('xyz',[x,y,z]);
+%z = str2double(get(handles.inputZPos,'String'));
+%SetPos('xyz',[x,y,z]);
+SetPos('xy',[x,y]);
 % IsBusy(hObject);
 [pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
 set(handles.inputYPos,'String', pos(2));
-set(handles.inputZPos,'String', pos(3));
+%set(handles.inputZPos,'String', pos(3));
 % hObject    handle to buttonSetPos (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -296,10 +297,8 @@ function buttonConnect_ButtonDownFcn(hObject, eventdata, handles)
 
 % --- Executes on button press in buttonXStepMove.
 function buttonXStepMove_Callback(hObject, eventdata, handles)
-[pos,~] = QueryPos;
-x = str2double(pos(1));
 step = str2double(get(handles.inputXStepMove,'String'));
-SetPos('x', x + step);
+MovPos('x', step);
 % IsBusy(hObject);
 [pos,~] = QueryPos;
 set(handles.inputXPos,'String', pos(1));
@@ -310,10 +309,8 @@ set(handles.inputXPos,'String', pos(1));
 
 % --- Executes on button press in buttonYStepMove.
 function buttonYStepMove_Callback(hObject, eventdata, handles)
-[pos,~] = QueryPos;
-y = str2double(pos(2));
 step = str2double(get(handles.inputYStepMove,'String'));
-SetPos('y', y + step);
+MovPos('y', step);
 % IsBusy(hObject);
 [pos,~] = QueryPos;
 set(handles.inputYPos,'String', pos(2));
@@ -324,10 +321,8 @@ set(handles.inputYPos,'String', pos(2));
 
 % --- Executes on button press in buttonZStepMove.
 function buttonZStepMove_Callback(hObject, eventdata, handles)
-[pos,~] = QueryPos;
-z = str2double(pos(3));
 step = str2double(get(handles.inputZStepMove,'String'));
-SetPos('z', z + step);
+MovPos('z', step);
 % IsBusy(hObject);
 [pos,~] = QueryPos;
 set(handles.inputZPos,'String', pos(3));
