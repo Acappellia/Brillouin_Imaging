@@ -22,7 +22,7 @@ function varargout = table_main(varargin)
 
 % Edit the above text to modify the response to help table_main
 
-% Last Modified by GUIDE v2.5 25-Feb-2022 21:29:30
+% Last Modified by GUIDE v2.5 18-Apr-2022 09:54:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -633,16 +633,21 @@ else
     set(handles.axesPreview, 'Position', axPos);
 end
 
-if isempty(vid)
-    vid = videoinput('hamamatsu', 1, 'MONO16_2304x2304_FasterMode');
-    % vid = videoinput('winvideo', 1, 'RGB24_960x540');
-    set(vid,'ReturnedColorSpace','grayscale');
-    set(vid,'TriggerRepeat',Inf);
-    set(vid,'FramesPerTrigger',1);
-    vid.FrameGrabInterval=1;
-else
+if ~isempty(vid)
     stoppreview(vid);
 end
+
+vinfo = imaqhwinfo;
+adaptor = vinfo.InstalledAdaptors{1};
+vformatno = get(handles.popupDevice, 'Value');
+vformatlist = get(handles.popupDevice,'String');
+vformat = vformatlist{vformatno};
+
+vid = videoinput(adaptor, 1, vformat);
+set(vid,'ReturnedColorSpace','grayscale');
+set(vid,'TriggerRepeat',Inf);
+set(vid,'FramesPerTrigger',1);
+vid.FrameGrabInterval=1;
 
 %
 
@@ -1066,6 +1071,36 @@ function inputPauseInterval_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupDevice.
+function popupDevice_Callback(hObject, eventdata, handles)
+% hObject    handle to popupDevice (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupDevice contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupDevice
+
+
+% --- Executes during object creation, after setting all properties.
+function popupDevice_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupDevice (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+
+vinfo = imaqhwinfo;
+adaptor = vinfo.InstalledAdaptors{1};
+vinfo = imaqhwinfo(adaptor,'DeviceInfo');
+formatsList = vinfo.SupportedFormats;
+set(hObject,'String',formatsList);
+
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
